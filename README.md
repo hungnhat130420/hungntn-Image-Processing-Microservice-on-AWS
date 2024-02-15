@@ -33,10 +33,6 @@
 
 ![Tên hình ảnh](screenshot/Screenshot_6.png)
 
-### A screenshot of the elastic beanstalk application dashboard is included in a deployment_screenshot directory:
-
-![Tên hình ảnh](screenshot/Screenshot_7.png)
-
 ### Access successfully with url : http://hungntn-projectstartcode-dev.us-east-1.elasticbeanstalk.com/
 
 ![Tên hình ảnh](screenshot/Screenshot_8.png)
