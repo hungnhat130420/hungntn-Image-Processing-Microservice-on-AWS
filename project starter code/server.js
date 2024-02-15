@@ -1,7 +1,8 @@
 import express from 'express';
 import bodyParser from 'body-parser';
 import {filterImageFromURL, deleteLocalFiles} from './util/util.js';
-
+import {HTTP_STATUS_CODES, HTTP_MESSAGES}  from './constants/constants.js';
+import winston from 'winston';
 
 
   // Init the Express application
@@ -30,6 +31,20 @@ import {filterImageFromURL, deleteLocalFiles} from './util/util.js';
     /**************************************************************************** */
 
   //! END @TODO1
+  const logger = winston.createLogger({
+    level: 'info',
+    format: winston.format.json(),
+    transports: [
+      new winston.transports.File({ filename: 'error.log', level: 'error' }),
+      new winston.transports.File({ filename: 'combined.log' }),
+    ],
+  });
+  
+  if (process.env.NODE_ENV !== 'production') {
+    logger.add(new winston.transports.Console({
+      format: winston.format.simple(),
+    }));
+  }
   
   // Root Endpoint
   // Displays a simple message to the user
@@ -41,29 +56,31 @@ import {filterImageFromURL, deleteLocalFiles} from './util/util.js';
   app.get( "/filteredimage", async (req, res) => {
   const { image_url } = req.query;
 
-  // validate the image_url query
   if (!image_url) {
-    return res.status(400).send({ message: 'Image URL is required' });
+    return res.status(HTTP_STATUS_CODES.BAD_REQUEST).send({ message: HTTP_MESSAGES.IMAGE_URL_REQUIRED });
   }
 
   try {
     // call filterImageFromURL(image_url) to filter the image
     const filteredpath = await filterImageFromURL(image_url);
+    logger.info(`Image filtered successfully: ${filteredpath}`);
 
     // send the resulting file in the response
     res.sendFile(filteredpath, async (err) => {
       if (!err) {
         // deletes any files on the server on finish of the response
         await deleteLocalFiles([filteredpath]);
+        logger.info(`Image file deleted successfully: ${filteredpath}`);
       }
     });
     } catch (error) {
-      res.status(422).send({ message: 'Unable to process image at the provided url' });
+      logger.error(`Error processing image: ${error}`);
+      res.status(HTTP_STATUS_CODES.UNPROCESSABLE_ENTITY).send({ message: HTTP_MESSAGES.UNABLE_TO_PROCESS_IMAGE });
     }
   });
 
   // Start the Server
   app.listen( port, () => {
-      console.log( `server running http://localhost:${ port }` );
-      console.log( `press CTRL+C to stop server` );
+      logger.info(`server running http://localhost:${ port }`);
+      logger.info( `press CTRL+C to stop server` );
   } );
