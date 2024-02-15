@@ -38,6 +38,30 @@ import {filterImageFromURL, deleteLocalFiles} from './util/util.js';
   } );
   
 
+  app.get( "/filteredimage", async (req, res) => {
+  const { image_url } = req.query;
+
+  // validate the image_url query
+  if (!image_url) {
+    return res.status(400).send({ message: 'Image URL is required' });
+  }
+
+  try {
+    // call filterImageFromURL(image_url) to filter the image
+    const filteredpath = await filterImageFromURL(image_url);
+
+    // send the resulting file in the response
+    res.sendFile(filteredpath, async (err) => {
+      if (!err) {
+        // deletes any files on the server on finish of the response
+        await deleteLocalFiles([filteredpath]);
+      }
+    });
+    } catch (error) {
+      res.status(422).send({ message: 'Unable to process image at the provided url' });
+    }
+  });
+
   // Start the Server
   app.listen( port, () => {
       console.log( `server running http://localhost:${ port }` );
